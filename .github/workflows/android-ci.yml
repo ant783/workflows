@@ -1,4 +1,4 @@
-name: Android CI
+name: Android CI & Auto Release
 
 on:
   push:
@@ -38,8 +38,33 @@ jobs:
     - name: Build Release APK
       run: ./gradlew assembleRelease
 
-    - name: Upload Release APK
+    - name: Upload built APKs as artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: MeshMessenger-release-apk
-        path: app/build/outputs/apk/release/app-release.apk
+        name: MeshMessenger-APKs
+        path: |
+          app/build/outputs/apk/debug/app-debug.apk
+          app/build/outputs/apk/release/app-release.apk
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download APK artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: MeshMessenger-APKs
+        path: ./dist
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ github.run_number }}
+        name: "MeshMessenger Build #${{ github.run_number }}"
+        body: |
+          🚀 Новый автоматический билд MeshMessenger  
+          - Debug и Release APK собраны через GitHub Actions  
+          - Версия: v${{ github.run_number }}
+        files: ./dist/**/*.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
