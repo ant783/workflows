@@ -1,8 +1,4 @@
-    - name: Make Gradlew Executable
-      run: chmod +x ./gradlew
-
-
-name: Android CI & Release
+name: Android CI
 
 on:
   push:
@@ -14,8 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
+    - name: Checkout repository
       uses: actions/checkout@v4
+
+    - name: Ensure Gradlew is executable
+      run: chmod +x ./gradlew
 
     - name: Setup JDK 17
       uses: actions/setup-java@v4
@@ -39,33 +38,8 @@ jobs:
     - name: Build Release APK
       run: ./gradlew assembleRelease
 
-    - name: Upload Artifacts
+    - name: Upload Release APK
       uses: actions/upload-artifact@v4
       with:
-        name: MeshMessenger-APKs
-        path: |
-          app/build/outputs/apk/debug/app-debug.apk
-          app/build/outputs/apk/release/app-release.apk
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-    - name: Download artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: MeshMessenger-APKs
-        path: ./dist
-
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: v${{ github.run_number }}
-        name: "MeshMessenger Build #${{ github.run_number }}"
-        body: |
-          🧱 Автоматическая сборка MeshMessenger  
-          - Debug и Release APK собраны через GitHub Actions  
-          - Версия: v${{ github.run_number }}
-        files: ./dist/**/*.apk
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        name: MeshMessenger-release-apk
+        path: app/build/outputs/apk/release/app-release.apk
