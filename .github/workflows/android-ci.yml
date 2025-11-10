@@ -1,10 +1,9 @@
-name: Android CI
+name: Android CI & Release
 
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -33,17 +32,36 @@ jobs:
     - name: Build Debug APK
       run: ./gradlew assembleDebug
 
-    - name: Upload Debug APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: MeshMessenger-debug-apk
-        path: app/build/outputs/apk/debug/app-debug.apk
-
     - name: Build Release APK
       run: ./gradlew assembleRelease
 
-    - name: Upload Release APK
+    - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: MeshMessenger-release-apk
-        path: app/build/outputs/apk/release/app-release.apk
+        name: MeshMessenger-APKs
+        path: |
+          app/build/outputs/apk/debug/app-debug.apk
+          app/build/outputs/apk/release/app-release.apk
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: MeshMessenger-APKs
+        path: ./dist
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ github.run_number }}
+        name: "MeshMessenger Build #${{ github.run_number }}"
+        body: |
+          🧱 Автоматическая сборка MeshMessenger  
+          - Debug и Release APK собраны через GitHub Actions  
+          - Версия: v${{ github.run_number }}
+        files: ./dist/**/*.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
